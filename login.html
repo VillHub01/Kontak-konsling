@@ -10,7 +10,7 @@
   <div class="w-full max-w-md bg-white p-6 rounded-xl shadow">
     <h2 class="text-xl font-semibold mb-4">Login Admin</h2>
     <form id="loginForm" class="space-y-3">
-      <input id="email" type="email" placeholder="Email admin" class="w-full p-3 border rounded" required />
+      <input id="username" type="text" placeholder="Username" class="w-full p-3 border rounded" required />
       <input id="password" type="password" placeholder="Password" class="w-full p-3 border rounded" required />
       <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded">Login</button>
       <div id="err" class="text-sm text-red-600 hidden"></div>
@@ -19,23 +19,38 @@
 
   <script src="/admin/js/supabase.js"></script>
   <script>
-    // Wait supabase client ready
     function waitForClient(cb){
       if(window.supabase) return cb();
       setTimeout(()=> waitForClient(cb), 80);
     }
+
     waitForClient(()=>{
       const form = document.getElementById('loginForm');
       const errEl = document.getElementById('err');
+
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email').value.trim();
+        const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
         errEl.classList.add('hidden');
-        const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
-        if(error){ errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
-        // success
-        window.location.href = 'dashboard.html';
+
+        // cek di tabel "admins"
+        const { data, error } = await window.supabase
+          .from("admins")
+          .select("*")
+          .eq("username", username)
+          .eq("password", password)
+          .single();
+
+        if (error || !data) {
+          errEl.textContent = "Username / Password salah";
+          errEl.classList.remove("hidden");
+          return;
+        }
+
+        // sukses → simpan session
+        localStorage.setItem("isAdmin", "true");
+        window.location.href = "dashboard.html";
       });
     });
   </script>
