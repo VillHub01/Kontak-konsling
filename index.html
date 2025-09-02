@@ -21,9 +21,14 @@
   <div class="h-16"></div> <!-- spacer biar konten ga ketiban navbar -->
 
   <!-- HEADER SLIDER -->
-  <header class="relative w-full h-64 md:h-96 overflow-hidden">
+  <!--<header class="relative w-full h-64 md:h-96 overflow-hidden">
     <div id="slider" class="w-full h-full flex transition-transform duration-700"></div>
     <div id="slider-dots" class="absolute bottom-4 w-full flex justify-center gap-2"></div>
+  </header>-->
+  <!-- HEADER SLIDER -->
+  <header class="relative w-full h-64 md:h-96 overflow-hidden">
+    <div id="slider" class="flex w-full h-full transition-transform duration-700 ease-in-out"></div>
+    <div id="slider-dots" class="absolute bottom-3 w-full flex justify-center gap-2"></div>
   </header>
 
   <!-- INTRODUCTION -->
@@ -127,6 +132,49 @@
     }, 4000);
 
     loadSlider();
+
+    // === AUTO SLIDER TANPA SUPABASE ===
+    const slider = document.getElementById("slider");
+    const dots = document.getElementById("slider-dots");
+    const images = [
+      "https://images.pexels.com/photos/5699456/pexels-photo-5699456.jpeg", // konseling 1
+      "https://images.pexels.com/photos/5699458/pexels-photo-5699458.jpeg", // konseling 2
+      "https://images.pexels.com/photos/5699462/pexels-photo-5699462.jpeg"  // konseling 3
+    ];
+    let currentIndex = 0;
+
+    function renderSlider() {
+      slider.innerHTML = images
+        .map(
+          (src) =>
+            `<img src="${src}" class="w-full h-full object-cover flex-shrink-0">`
+        )
+        .join("");
+
+      dots.innerHTML = images
+        .map(
+          (_, i) =>
+            `<button onclick="goToSlide(${i})" class="w-2 h-2 rounded-full transition ${i === 0 ? "bg-white" : "bg-gray-400"}"></button>`
+        )
+        .join("");
+    }
+
+    function goToSlide(i) {
+      currentIndex = i;
+      slider.style.transform = `translateX(-${i * 100}%)`;
+      [...dots.children].forEach(
+        (d, idx) =>
+          (d.className = `w-2 h-2 rounded-full transition ${idx === i ? "bg-white" : "bg-gray-400"}`)
+      );
+    }
+
+    function autoSlide() {
+      currentIndex = (currentIndex + 1) % images.length;
+      goToSlide(currentIndex);
+    }
+
+    renderSlider();
+    setInterval(autoSlide, 4000);
 
     // FORM KONSELING
     async function sendKonseling(gender){
