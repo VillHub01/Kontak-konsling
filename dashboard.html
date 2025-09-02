@@ -78,13 +78,23 @@
       window.location.href = 'login.html';
     });
 
-    // wait client ready
-    (function waitClient(){
-      if(!window.supabase) return setTimeout(waitClient, 80);
-      init();
-    })();
+// tunggu client supabase siap
+(function waitClient(){
+  if(!window.supabase) return setTimeout(waitClient, 80);
 
-    async function init(){
+  // cek session admin manual
+  if (localStorage.getItem("isAdmin") !== "true") {
+    window.location.href = "login.html";
+    return; // stop biar ga lanjut init()
+  }
+
+  // kalau lolos cek, lanjut init
+  init();
+})();
+
+async function init(){
+  // isi dashboard logic lo disini
+    }
       // auth check
       const { data: { user } } = await window.supabase.auth.getUser();
       if(!user) return window.location.href = 'login.html';
