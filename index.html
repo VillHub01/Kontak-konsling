@@ -102,36 +102,36 @@
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     // SLIDER LOAD
-    const slider = document.getElementById('slider');
-    const dots = document.getElementById('slider-dots');
-    let images = [];
-    let current = 0;
+    // const slider = document.getElementById('slider');
+   // const dots = document.getElementById('slider-dots');
+    // let images = [];
+   //  let current = 0;
 
-    async function loadSlider() {
-      const { data } = await supabase.from('slider_images').select('*');
-      images = data || [];
-      slider.innerHTML = images.map(img => 
-        `<img src="${img.url}" class="w-full h-full object-cover flex-shrink-0">`
-      ).join('');
-      dots.innerHTML = images.map((_, i) => 
-        `<button onclick="goToSlide(${i})" class="w-3 h-3 rounded-full ${i===0?'bg-white':'bg-gray-400'}"></button>`
-      ).join('');
+   //  async function loadSlider() {
+    //   const { data } = await supabase.from('slider_images').select('*');
+    //   images = data || [];
+     //  slider.innerHTML = images.map(img => 
+     //    `<img src="${img.url}" class="w-full h-full object-cover flex-shrink-0">`
+     // ).join('');
+      // dots.innerHTML = images.map((_, i) => 
+       //  `<button onclick="goToSlide(${i})" class="w-3 h-3 rounded-full ${i===0?'bg-white':'bg-gray-400'}"></button>`
+    //   ).join('');
     }
 
-    function goToSlide(i) {
-      current = i;
-      slider.style.transform = `translateX(-${i*100}%)`;
-      [...dots.children].forEach((d, idx) => d.className = `w-3 h-3 rounded-full ${idx===i?'bg-white':'bg-gray-400'}`);
+   //  function goToSlide(i) {
+     //  current = i;
+    //   slider.style.transform = `translateX(-${i*100}%)`;
+    //   [...dots.children].forEach((d, idx) => d.className = `w-3 h-3 rounded-full ${idx===i?'bg-white':'bg-gray-400'}`);
     }
 
-    setInterval(() => {
-      if(images.length > 0){
-        current = (current+1) % images.length;
-        goToSlide(current);
-      }
-    }, 4000);
+   //  setInterval(() => {
+   //   if(images.length > 0){
+    //    current = (current+1) % images.length;
+    //    goToSlide(current);
+   //   }
+  //  }, 4000);
 
-    loadSlider();
+  //  loadSlider();
 
     // === AUTO SLIDER TANPA SUPABASE ===
     const slider = document.getElementById("slider");
