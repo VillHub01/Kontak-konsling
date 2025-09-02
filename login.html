@@ -18,41 +18,41 @@
   </div>
 
   <script src="supabase.js"></script>
-  <script>
-    function waitForClient(cb){
-      if(window.supabase) return cb();
-      setTimeout(()=> waitForClient(cb), 80);
-    }
+<script>
+  function waitForClient(cb){
+    if(window.supabase) return cb();
+    setTimeout(()=> waitForClient(cb), 80);
+  }
 
-    waitForClient(()=>{
-      const form = document.getElementById('loginForm');
-      const errEl = document.getElementById('err');
+  waitForClient(()=>{
+    const form = document.getElementById('loginForm');
+    const errEl = document.getElementById('err');
 
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
-        errEl.classList.add('hidden');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      errEl.classList.add('hidden');
 
-        // cek di tabel "admins"
-        const { data, error } = await window.supabase
-          .from("admins")
-          .select("*")
-          .eq("username", username)
-          .eq("password", password)
-          .single();
+      // cek ke tabel admins
+      const { data, error } = await window.supabase
+        .from("admins")
+        .select("*")
+        .eq("username", email)
+        .eq("password", password)
+        .single();
 
-        if (error || !data) {
-          errEl.textContent = "Username / Password salah";
-          errEl.classList.remove("hidden");
-          return;
-        }
+      if (error || !data) {
+        errEl.textContent = "Username / Password salah";
+        errEl.classList.remove('hidden');
+        return;
+      }
 
-        // sukses → simpan session
-        localStorage.setItem("isAdmin", "true");
-        window.location.href = "dashboard.html";
-      });
+      // sukses, simpan session manual
+      localStorage.setItem("isAdmin", "true");
+      window.location.href = "dashboard.html";
     });
-  </script>
+  });
+</script>
 </body>
 </html>
