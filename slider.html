@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Kelola Slider - Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide-icons/dist/lucide.min.js"></script>
+</head>
+<body class="bg-gray-100 flex">
+  <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform -translate-x-full md:translate-x-0 transition-transform z-40">
+    <div class="p-6 flex items-center justify-between border-b"><h2 class="text-xl font-bold text-blue-600">Admin Panel</h2><button id="closeSidebar" class="md:hidden"><i data-lucide="x"></i></button></div>
+    <nav class="p-4"><ul class="space-y-2"><li><a href="dashboard.html" class="p-3 rounded hover:bg-blue-50">Dashboard</a></li><li><a href="konsultasi.html" class="p-3 rounded hover:bg-blue-50">Data Konsultasi</a></li><li><a href="slider.html" class="p-3 rounded bg-blue-100 text-blue-700">Kelola Slider</a></li><li><a href="settings.html" class="p-3 rounded hover:bg-blue-50">Pengaturan</a></li></ul></nav>
+  </aside>
+
+  <main class="flex-1 md:ml-64 p-6">
+    <header class="flex justify-between items-center mb-6">
+      <button id="openSidebar" class="md:hidden"><i data-lucide="menu"></i></button>
+      <h1 class="text-2xl font-bold">Kelola Slider</h1>
+      <a href="../index.html" class="px-4 py-2 bg-blue-600 text-white rounded">Kembali</a>
+    </header>
+
+    <div class="bg-white rounded-xl shadow p-5 mb-6">
+      <h2 class="text-lg font-semibold mb-3">Tambah Gambar</h2>
+      <div class="flex gap-3">
+        <input type="file" id="fileInput" accept="image/*" class="p-2 border rounded" />
+        <button id="uploadBtn" class="px-4 py-2 bg-green-600 text-white rounded">Upload</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-5">
+      <h2 class="text-lg font-semibold mb-4">Daftar Gambar</h2>
+      <div id="grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </div>
+  </main>
+
+  <script src="/admin/js/supabase.js"></script>
+  <script>
+    lucide.createIcons();
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('openSidebar').addEventListener('click', ()=> sidebar.classList.remove('-translate-x-full'));
+    document.getElementById('closeSidebar').addEventListener('click', ()=> sidebar.classList.add('-translate-x-full'));
+
+    (function waitClient(){ if(!window.supabase) return setTimeout(waitClient,80); init(); })();
+
+    async function init(){
+      const client = window.supabase;
+      const { data: { user } } = await client.auth.getUser();
+      if(!user) return window.location.href = 'login.html';
+
+      const bucket = 'slider';
+      const grid = document.getElementById('grid');
+      async function refresh(){
+        const { data, error } = await client.from('slider_images').select('*').order('ordering', { ascending: true });
+        if(error){ console.error(error); return; }
+        grid.innerHTML = data.map(i => `
+          <div class="relative group border rounded-xl overflow-hidden shadow">
+            <img src="${i.url}" class="w-full h-40 object-cover" />
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition">
+              <button data-id="${i.id}" class="del p-3 bg-red-600 text-white rounded-full"><i data-lucide="trash-2"></i></button>
+              <button data-id="${i.id}" class="up p-3 bg-white rounded-full"><i data-lucide="arrow-up"></i></button>
+              <button data-id="${i.id}" class="down p-3 bg-white rounded-full"><i data-lucide="arrow-down"></i></button>
+            </div>
+          </div>
+        `).join('');
+        attachHandlers();
+        lucide.createIcons();
+      }
+
+      function attachHandlers(){
+        document.querySelectorAll('.del').forEach(b => b.onclick = async (e) => {
+          const id = e.currentTarget.dataset.id;
+          if(!confirm('Hapus gambar?')) return;
+          // fetch record to attempt storage delete
+          const { data: rec } = await client.from('slider_images').select('*').eq('id', id).single();
+          if(rec && rec.url){
+            // try parse path after '/storage/v1/object/public/{bucket}/'
+            try {
+              const url = new URL(rec.url);
+              const parts = url.pathname.split('/storage/v1/object/public/');
+              if(parts[1]){
+                const path = parts[1]; // bucket/...path...
+                // remove bucket prefix
+                const idx = path.indexOf('/');
+                const storagePath = path.slice(idx+1);
+                await client.storage.from('slider').remove([storagePath]).catch(()=>{});
+              }
+            } catch(e){ console.warn('parse fail', e); }
+          }
+          await client.from('slider_images').delete().eq('id', id);
+          refresh();
+        });
+
+        document.querySelectorAll('.up').forEach(b => b.onclick = async (e) => {
+          await swapOrder(e.currentTarget.dataset.id, -1);
+          refresh();
+        });
+        document.querySelectorAll('.down').forEach(b => b.onclick = async (e) => {
+          await swapOrder(e.currentTarget.dataset.id, +1);
+          refresh();
+        });
+      }
+
+      async function swapOrder(id, dir){
+        const { data: rows } = await client.from('slider_images').select('*').order('ordering', { ascending: true });
+        const idx = rows.findIndex(r => r.id === id);
+        if(idx === -1) return;
+        const swapIdx = idx + dir;
+        if(swapIdx < 0 || swapIdx >= rows.length) return;
+        const a = rows[idx], b = rows[swapIdx];
+        // swap ordering
+        await client.from('slider_images').update({ ordering: b.ordering }).eq('id', a.id);
+        await client.from('slider_images').update({ ordering: a.ordering }).eq('id', b.id);
+      }
+
+      document.getElementById('uploadBtn').addEventListener('click', async ()=>{
+        const f = document.getElementById('fileInput').files[0];
+        if(!f) return alert('Pilih file');
+        const filePath = `${Date.now()}-${f.name}`;
+        const { data: uploadRes, error: upErr } = await client.storage.from(bucket).upload(filePath, f);
+        if(upErr) return alert('Upload gagal: ' + upErr.message);
+        const { data: urlData } = client.storage.from(bucket).getPublicUrl(filePath);
+        // compute next ordering
+        const { data: last } = await client.from('slider_images').select('ordering').order('ordering', { ascending: false }).limit(1);
+        const nextOrder = (last && last[0]) ? last[0].ordering + 1 : 0;
+        await client.from('slider_images').insert([{ url: urlData.publicUrl, ordering: nextOrder }]);
+        refresh();
+      });
+
+      await refresh();
+    }
+  </script>
+</body>
+</html>

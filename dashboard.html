@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard Admin - Konseling</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide-icons/dist/lucide.min.js"></script>
+</head>
+<body class="bg-gray-100 flex">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-40">
+    <div class="p-6 flex items-center justify-between border-b">
+      <h2 class="text-xl font-bold text-blue-600">Admin Panel</h2>
+      <button id="closeSidebar" class="md:hidden text-gray-600 hover:text-red-500"><i data-lucide="x"></i></button>
+    </div>
+    <nav class="p-4">
+      <ul class="space-y-2">
+        <li><a href="dashboard.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+        <li><a href="konsultasi.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition"><i data-lucide="file-text"></i> Data Konsultasi</a></li>
+        <li><a href="slider.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition"><i data-lucide="image"></i> Kelola Slider</a></li>
+        <li><a href="settings.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition"><i data-lucide="settings"></i> Pengaturan</a></li>
+        <li><button id="logoutBtn" class="w-full text-left p-3 rounded-lg text-red-600 hover:bg-red-50 transition"><i data-lucide="log-out"></i> Logout</button></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 md:ml-64 p-6">
+    <header class="flex justify-between items-center mb-6">
+      <button id="openSidebar" class="md:hidden text-gray-700 hover:text-blue-600"><i data-lucide="menu"></i></button>
+      <h1 class="text-2xl font-bold text-gray-700">Dashboard Admin</h1>
+      <a href="../index.html" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2"><i data-lucide="home"></i> Kembali</a>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white rounded-xl shadow hover:shadow-lg transition p-5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-gray-600">Total Konsultasi</h3>
+          <i data-lucide="users" class="text-blue-600"></i>
+        </div>
+        <p id="totalKonsul" class="text-3xl font-bold text-blue-600 mt-2">--</p>
+      </div>
+
+      <div class="bg-white rounded-xl shadow hover:shadow-lg transition p-5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-gray-600">Gambar Slider</h3>
+          <i data-lucide="image" class="text-green-600"></i>
+        </div>
+        <p id="totalSlider" class="text-3xl font-bold text-green-600 mt-2">--</p>
+      </div>
+
+      <div class="bg-white rounded-xl shadow hover:shadow-lg transition p-5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-gray-600">Jadwal Konseling</h3>
+          <i data-lucide="calendar" class="text-purple-600"></i>
+        </div>
+        <p id="jadwalText" class="text-lg font-semibold text-gray-800 mt-2">--</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/admin/js/supabase.js"></script>
+  <script>
+    lucide.createIcons();
+
+    // sidebar toggle
+    const sidebar = document.getElementById("sidebar");
+    const openSidebar = document.getElementById("openSidebar");
+    const closeSidebar = document.getElementById("closeSidebar");
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    openSidebar?.addEventListener('click', ()=> sidebar.classList.remove('-translate-x-full'));
+    closeSidebar?.addEventListener('click', ()=> sidebar.classList.add('-translate-x-full'));
+    logoutBtn?.addEventListener('click', async ()=> {
+      await window.supabase.auth.signOut();
+      window.location.href = 'login.html';
+    });
+
+    // wait client ready
+    (function waitClient(){
+      if(!window.supabase) return setTimeout(waitClient, 80);
+      init();
+    })();
+
+    async function init(){
+      // auth check
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if(!user) return window.location.href = 'login.html';
+
+      // load totals
+      const { data: kons } = await window.supabase.from('konsultasi').select('id', { count: 'exact' });
+      const totalKonsul = kons ? kons.length : 0;
+      document.getElementById('totalKonsul').textContent = totalKonsul;
+
+      const { data: slides } = await window.supabase.from('slider_images').select('*');
+      document.getElementById('totalSlider').textContent = slides ? slides.length : 0;
+
+      const { data: jad } = await window.supabase.from('jadwal').select('*').order('created_at', { ascending: true });
+      if(jad && jad.length) {
+        document.getElementById('jadwalText').textContent = jad.map(x => x.hari).slice(0,3).join(', ');
+      } else {
+        document.getElementById('jadwalText').textContent = 'Belum ada jadwal';
+      }
+    }
+  </script>
+</body>
+</html>

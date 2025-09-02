@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Pengaturan - Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide-icons/dist/lucide.min.js"></script>
+</head>
+<body class="bg-gray-100 flex">
+  <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform -translate-x-full md:translate-x-0 transition-transform z-40">
+    <div class="p-6 flex items-center justify-between border-b"><h2 class="text-xl font-bold text-blue-600">Admin Panel</h2><button id="closeSidebar" class="md:hidden"><i data-lucide="x"></i></button></div>
+    <nav class="p-4"><ul class="space-y-2"><li><a href="dashboard.html" class="p-3 rounded hover:bg-blue-50">Dashboard</a></li><li><a href="konsultasi.html" class="p-3 rounded hover:bg-blue-50">Data Konsultasi</a></li><li><a href="slider.html" class="p-3 rounded hover:bg-blue-50">Kelola Slider</a></li><li><a href="settings.html" class="p-3 rounded bg-blue-100 text-blue-700">Pengaturan</a></li></ul></nav>
+  </aside>
+
+  <main class="flex-1 md:ml-64 p-6">
+    <header class="flex justify-between items-center mb-6">
+      <button id="openSidebar" class="md:hidden"><i data-lucide="menu"></i></button>
+      <h1 class="text-2xl font-bold">Pengaturan</h1>
+      <a href="../index.html" class="px-4 py-2 bg-blue-600 text-white rounded">Kembali</a>
+    </header>
+
+    <div class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section class="bg-white rounded-xl shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Nomor WhatsApp & Template</h2>
+          <label class="text-sm text-gray-600">Nomor WA - Laki-laki</label>
+          <input id="waMale" class="w-full p-3 border rounded mb-3" />
+          <label class="text-sm text-gray-600">Nomor WA - Perempuan</label>
+          <input id="waFemale" class="w-full p-3 border rounded mb-3" />
+          <label class="text-sm text-gray-600">Template Pesan</label>
+          <textarea id="templateMsg" rows="4" class="w-full p-3 border rounded"></textarea>
+          <div class="mt-4 flex gap-3">
+            <button id="saveSettings" class="px-4 py-2 bg-blue-600 text-white rounded">Simpan</button>
+            <button id="reloadSettings" class="px-4 py-2 bg-gray-100 rounded">Reload</button>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-xl shadow p-6">
+          <h2 class="text-lg font-semibold mb-4">Jadwal & Logo</h2>
+          <div class="mb-4">
+            <div id="jadwalList" class="space-y-2"></div>
+            <form id="jadwalForm" class="flex gap-2 mt-3">
+              <input id="hariInput" class="p-2 border rounded" placeholder="Hari (Senin)" />
+              <input id="jamInput" class="p-2 border rounded" placeholder="Jam (08:00 - 12:00)" />
+              <button class="px-4 py-2 bg-green-600 text-white rounded" type="submit">Tambah</button>
+            </form>
+          </div>
+
+          <div class="border p-4 rounded">
+            <h3 class="font-medium mb-2">Logo Website</h3>
+            <div class="flex items-center gap-4">
+              <div class="w-24 h-24 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                <img id="logoPreview" class="hidden object-contain w-full h-full" />
+                <span id="logoPlaceholder" class="text-gray-400">Belum</span>
+              </div>
+              <div>
+                <input id="logoFile" type="file" accept="image/*" class="mb-2" />
+                <div><button id="uploadLogoBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Upload & Simpan</button></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Admin Morse -->
+      <section class="bg-white rounded-xl shadow p-6 border-l-4 border-indigo-500">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Admin Morse</h2>
+          <small class="text-gray-500">Sandi default 1234 (maks 4 digit)</small>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <div class="p-4 border rounded">
+            <h3 class="font-semibold mb-3">Ganti PIN</h3>
+            <div class="flex gap-3">
+              <input id="pinInput" maxlength="4" class="p-2 border rounded w-40" placeholder="4 digit" />
+              <button id="changePin" class="px-3 py-2 bg-indigo-600 text-white rounded">Ganti</button>
+              <button id="resetPin" class="px-3 py-2 bg-gray-100 rounded">Reset</button>
+            </div>
+            <p id="pinMsg" class="text-sm text-red-600 mt-2 hidden"></p>
+          </div>
+
+          <div class="p-4 border rounded">
+            <h3 class="font-semibold mb-3">Manajemen Admin (Auth via Supabase)</h3>
+            <p class="text-sm text-gray-500 mb-3">Tambah admin lewat Supabase Auth (console) atau gunakan API server-side. Daftar user auth akan tampil di bawah.</p>
+            <div id="adminList"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="/admin/js/supabase.js"></script>
+  <script>
+    lucide.createIcons();
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('openSidebar').addEventListener('click', ()=> sidebar.classList.remove('-translate-x-full'));
+    document.getElementById('closeSidebar').addEventListener('click', ()=> sidebar.classList.add('-translate-x-full'));
+
+    (function waitClient(){ if(!window.supabase) return setTimeout(waitClient,80); init(); })();
+
+    function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+
+    async function init(){
+      const client = window.supabase;
+      const { data: { user } } = await client.auth.getUser();
+      if(!user) return window.location.href = 'login.html';
+
+      // load settings
+      async function loadSettings(){
+        const { data, error } = await client.from('settings').select('*').limit(1).single();
+        if(error && error.code !== 'PGRST116') { console.error(error); } // ignore no rows
+        if(data){
+          document.getElementById('waMale').value = data.wa_laki || '';
+          document.getElementById('waFemale').value = data.wa_perempuan || '';
+          document.getElementById('templateMsg').value = data.template || '';
+          if(data.logo_url){ document.getElementById('logoPreview').src = data.logo_url; document.getElementById('logoPreview').classList.remove('hidden'); document.getElementById('logoPlaceholder').classList.add('hidden'); }
+        }
+      }
+
+      // load jadwal
+      async function loadJadwal(){
+        const { data, error } = await client.from('jadwal').select('*').order('created_at', { ascending: true });
+        const el = document.getElementById('jadwalList');
+        el.innerHTML = (data || []).map(j => `
+          <div class="flex items-center justify-between p-2 border rounded">
+            <div><div class="font-medium">${escapeHtml(j.hari)}</div><div class="text-sm text-gray-500">${escapeHtml(j.jam)}</div></div>
+            <button data-id="${j.id}" class="del-jadwal text-sm text-red-600">Hapus</button>
+          </div>
+        `).join('');
+        document.querySelectorAll('.del-jadwal').forEach(b => b.onclick = async (e) => {
+          if(!confirm('Hapus jadwal?')) return;
+          const id = e.currentTarget.dataset.id;
+          await client.from('jadwal').delete().eq('id', id);
+          loadJadwal();
+        });
+      }
+
+      // admin list (from auth.users)
+      async function loadAdmins(){
+        // note: listing auth.users via anon key may be restricted by RLS; you can manage admins via server or link admins table
+        try {
+          const { data: users } = await client.auth.admin.listUsers(); // requires service_role -> NOT available in frontend. So fallback: attempt to read admins table if exists
+          // admin listing likely restricted — fallback to fetch admins table
+        } catch(e){
+          // ignore
+        }
+        // try admins table
+        const { data: admins } = await client.from('admins').select('id,display_name,user_id');
+        const el = document.getElementById('adminList');
+        if(admins && admins.length){
+          el.innerHTML = admins.map(a => `<div class="p-2 border rounded mb-2"><div class="font-medium">${escapeHtml(a.display_name || 'admin')}</div><div class="text-xs text-gray-500">id: ${a.user_id || a.id}</div></div>`).join('');
+        } else {
+          el.innerHTML = `<div class="text-sm text-gray-500">(Tidak ada data admins table)</div>`;
+        }
+      }
+
+      // event handlers
+      document.getElementById('saveSettings').addEventListener('click', async ()=>{
+        const waMale = document.getElementById('waMale').value.trim();
+        const waFemale = document.getElementById('waFemale').value.trim();
+        const template = document.getElementById('templateMsg').value.trim();
+        await client.from('settings').upsert({ id: 1, wa_laki: waMale, wa_perempuan: waFemale, template }, { onConflict: 'id' });
+        alert('Pengaturan disimpan');
+      });
+
+      document.getElementById('reloadSettings').addEventListener('click', loadSettings);
+
+      // jadwal add
+      document.getElementById('jadwalForm').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const hari = document.getElementById('hariInput').value.trim();
+        const jam = document.getElementById('jamInput').value.trim();
+        if(!hari || !jam) return alert('Isi hari & jam');
+        await client.from('jadwal').insert([{ hari, jam }]);
+        document.getElementById('hariInput').value=''; document.getElementById('jamInput').value='';
+        loadJadwal();
+      });
+
+      // logo upload
+      document.getElementById('uploadLogoBtn').addEventListener('click', async ()=>{
+        const f = document.getElementById('logoFile').files[0];
+        if(!f) return alert('Pilih file logo');
+        const path = `logo/${Date.now()}-${f.name}`;
+        const { data: up, error: upErr } = await client.storage.from('logo').upload(path, f);
+        if(upErr) return alert('Upload gagal: ' + upErr.message);
+        const { data: urlData } = client.storage.from('logo').getPublicUrl(path);
+        await client.from('settings').upsert({ id: 1, logo_url: urlData.publicUrl }, { onConflict: 'id' });
+        document.getElementById('logoPreview').src = urlData.publicUrl;
+        document.getElementById('logoPreview').classList.remove('hidden');
+        document.getElementById('logoPlaceholder').classList.add('hidden');
+        alert('Logo diupload & disimpan');
+      });
+
+      // PIN change (store in settings table or admins table? We'll store in settings.morse_pin)
+      const pinInput = document.getElementById('pinInput'), changePinBtn = document.getElementById('changePin'), resetPinBtn = document.getElementById('resetPin'), pinMsg = document.getElementById('pinMsg');
+      changePinBtn.addEventListener('click', async ()=>{
+        const p = pinInput.value.trim();
+        if(!/^\d{4}$/.test(p)){ pinMsg.textContent = 'PIN harus 4 digit'; pinMsg.classList.remove('hidden'); return; }
+        await client.from('settings').upsert({ id:1, morse_pin: p }, { onConflict: 'id' });
+        pinMsg.classList.add('hidden'); pinInput.value=''; alert('PIN disimpan');
+      });
+      resetPinBtn.addEventListener('click', async ()=>{ await client.from('settings').upsert({ id:1, morse_pin: '1234' }, { onConflict: 'id' }); alert('PIN di-reset ke 1234'); });
+
+      // run initial loads
+      await loadSettings(); await loadJadwal(); await loadAdmins();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Data Konsultasi - Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide-icons/dist/lucide.min.js"></script>
+</head>
+<body class="bg-gray-100 flex">
+  <!-- Sidebar omitted here: reuse same markup as other admin pages or paste sidebar from dashboard -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-40">
+    <div class="p-6 flex items-center justify-between border-b">
+      <h2 class="text-xl font-bold text-blue-600">Admin Panel</h2>
+      <button id="closeSidebar" class="md:hidden text-gray-600 hover:text-red-500"><i data-lucide="x"></i></button>
+    </div>
+    <nav class="p-4">
+      <ul class="space-y-2">
+        <li><a href="dashboard.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+        <li><a href="konsultasi.html" class="flex items-center gap-3 p-3 rounded-lg bg-blue-100 text-blue-700"><i data-lucide="file-text"></i> Data Konsultasi</a></li>
+        <li><a href="slider.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition"><i data-lucide="image"></i> Kelola Slider</a></li>
+        <li><a href="settings.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition"><i data-lucide="settings"></i> Pengaturan</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="flex-1 md:ml-64 p-6">
+    <header class="flex justify-between items-center mb-6">
+      <button id="openSidebar" class="md:hidden text-gray-700 hover:text-blue-600"><i data-lucide="menu"></i></button>
+      <h1 class="text-2xl font-bold">Data Konsultasi</h1>
+      <a href="../index.html" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Kembali</a>
+    </header>
+
+    <div class="bg-white rounded-xl shadow p-5 overflow-auto">
+      <table class="w-full text-sm" id="tbl">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="p-3 text-left">Nama</th>
+            <th class="p-3 text-left">Kelas</th>
+            <th class="p-3 text-left">Jenis</th>
+            <th class="p-3 text-left">Pesan</th>
+            <th class="p-3 text-left">Waktu</th>
+            <th class="p-3 text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="/admin/js/supabase.js"></script>
+  <script>
+    lucide.createIcons();
+    // sidebar toggles
+    const sidebar = document.getElementById("sidebar");
+    document.getElementById('openSidebar').addEventListener('click', ()=> sidebar.classList.remove('-translate-x-full'));
+    document.getElementById('closeSidebar').addEventListener('click', ()=> sidebar.classList.add('-translate-x-full'));
+
+    (function waitClient(){
+      if(!window.supabase) return setTimeout(waitClient, 80);
+      init();
+    })();
+
+    function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+
+    async function init(){
+      const { data: { user } } = await window.supabase.auth.getUser();
+      if(!user) return window.location.href = 'login.html';
+
+      async function load(){
+        const { data, error } = await window.supabase.from('konsultasi').select('*').order('created_at', { ascending: false });
+        if(error){ console.error(error); return; }
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = data.map(r => `
+          <tr class="border-t">
+            <td class="p-3">${escapeHtml(r.nama)}</td>
+            <td class="p-3">${escapeHtml(r.kelas)}</td>
+            <td class="p-3">${escapeHtml(r.gender||'')}</td>
+            <td class="p-3">${escapeHtml(r.message||'')}</td>
+            <td class="p-3">${new Date(r.created_at).toLocaleString()}</td>
+            <td class="p-3 text-center">
+              <button data-id="${r.id}" class="viewBtn px-2 py-1 bg-blue-100 text-blue-700 rounded">Lihat</button>
+              <button data-id="${r.id}" class="delBtn px-2 py-1 bg-red-100 text-red-700 rounded ml-2">Hapus</button>
+            </td>
+          </tr>
+        `).join('');
+        attachHandlers();
+      }
+
+      function attachHandlers(){
+        document.querySelectorAll('.delBtn').forEach(btn => btn.onclick = async (e) => {
+          const id = e.currentTarget.dataset.id;
+          if(!confirm('Hapus data?')) return;
+          const { error } = await window.supabase.from('konsultasi').delete().eq('id', id);
+          if(error) return alert('Gagal: ' + error.message);
+          load();
+        });
+        document.querySelectorAll('.viewBtn').forEach(btn => btn.onclick = (e) => {
+          const tr = e.currentTarget.closest('tr');
+          const msg = tr.children[3].textContent;
+          alert('Pesan: ' + msg);
+        });
+      }
+
+      await load();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin Login - Konseling</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-50">
+  <div class="w-full max-w-md bg-white p-6 rounded-xl shadow">
+    <h2 class="text-xl font-semibold mb-4">Login Admin</h2>
+    <form id="loginForm" class="space-y-3">
+      <input id="email" type="email" placeholder="Email admin" class="w-full p-3 border rounded" required />
+      <input id="password" type="password" placeholder="Password" class="w-full p-3 border rounded" required />
+      <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded">Login</button>
+      <div id="err" class="text-sm text-red-600 hidden"></div>
+    </form>
+  </div>
+
+  <script src="/admin/js/supabase.js"></script>
+  <script>
+    // Wait supabase client ready
+    function waitForClient(cb){
+      if(window.supabase) return cb();
+      setTimeout(()=> waitForClient(cb), 80);
+    }
+    waitForClient(()=>{
+      const form = document.getElementById('loginForm');
+      const errEl = document.getElementById('err');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        errEl.classList.add('hidden');
+        const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
+        if(error){ errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
+        // success
+        window.location.href = 'dashboard.html';
+      });
+    });
+  </script>
+</body>
+</html>

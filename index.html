@@ -1,0 +1,158 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kontak Konseling Al Kautsar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- NAVBAR -->
+  <nav class="flex justify-between items-center px-6 py-4 bg-white shadow fixed w-full z-50">
+    <h1 class="text-xl font-bold">Konseling Al Kautsar</h1>
+    <a href="admin/login.html" 
+       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+      Admin
+    </a>
+  </nav>
+  <div class="h-16"></div> <!-- spacer biar konten ga ketiban navbar -->
+
+  <!-- HEADER SLIDER -->
+  <header class="relative w-full h-64 md:h-96 overflow-hidden">
+    <div id="slider" class="w-full h-full flex transition-transform duration-700"></div>
+    <div id="slider-dots" class="absolute bottom-4 w-full flex justify-center gap-2"></div>
+  </header>
+
+  <!-- INTRODUCTION -->
+  <section class="max-w-5xl mx-auto p-6 text-center">
+    <h2 class="text-2xl font-bold mb-4">Selamat Datang di Kontak Konseling Al Kautsar</h2>
+    <p class="text-gray-600">Kami hadir untuk mendukung perjalanan belajar dan kehidupan siswa dengan layanan konseling yang ramah dan profesional.</p>
+  </section>
+
+  <!-- JADWAL KONSELING -->
+  <section class="max-w-5xl mx-auto p-6 grid md:grid-cols-3 gap-6">
+    <div class="p-4 bg-white rounded-xl shadow hover:shadow-lg transition">
+      <h3 class="font-semibold">Senin</h3>
+      <p>08:00 - 12:00</p>
+    </div>
+    <div class="p-4 bg-white rounded-xl shadow hover:shadow-lg transition">
+      <h3 class="font-semibold">Selesa</h3>
+      <p>08:00 - 12:00</p>
+    </div>
+    <div class="p-4 bg-white rounded-xl shadow hover:shadow-lg transition">
+      <h3 class="font-semibold">Rabu</h3>
+      <p>10:00 - 14:00</p>
+    </div>
+    <div class="p-4 bg-white rounded-xl shadow hover:shadow-lg transition">
+      <h3 class="font-semibold">Kamis</h3>
+      <p>08:00 - 12:00</p>
+    </div>
+    <div class="p-4 bg-white rounded-xl shadow hover:shadow-lg transition">
+      <h3 class="font-semibold">Jumat</h3>
+      <p>09:00 - 12:00</p>
+    </div>
+  </section>
+
+  <!-- KONTAK KONSELING -->
+  <section class="max-w-3xl mx-auto p-6">
+    <h2 class="text-xl font-bold text-center mb-6">Kontak Konseling Al Kautsar</h2>
+    <form id="konseling-form" class="bg-white p-6 rounded-xl shadow space-y-4">
+      <input type="text" id="nama" placeholder="Masukkan nama lengkap" class="w-full border p-2 rounded" required>
+      <input type="text" id="kelas" placeholder="Masukkan kelas" class="w-full border p-2 rounded" required>
+
+      <div class="flex gap-4">
+        <button type="button" onclick="sendKonseling('laki')" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Laki-laki</button>
+        <button type="button" onclick="sendKonseling('perempuan')" class="flex-1 bg-pink-600 text-white py-2 rounded hover:bg-pink-700">Perempuan</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="max-w-5xl mx-auto p-6 text-center">
+    <h2 class="text-xl font-bold mb-4">Tentang Konseling</h2>
+    <p class="text-gray-600">Layanan konseling Al Kautsar bertujuan untuk membantu siswa dalam menyelesaikan masalah akademik maupun non-akademik dengan pendekatan yang manusiawi dan rahasia terjaga.</p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-800 text-gray-200 text-center py-4 mt-8">
+    © Copyright | TIK NevilL Febraien | 2025
+  </footer>
+
+  <!-- POPUP KONFIRMASI -->
+  <div id="popup" class="hidden fixed inset-0 flex items-center justify-center bg-black/50">
+    <div class="bg-white p-6 rounded-xl shadow text-center animate-bounce">
+      <i data-lucide="check-circle" class="mx-auto text-green-500 w-12 h-12"></i>
+      <p class="mt-4 font-semibold">Pesan terkirim! Harap tunggu kontak dari pihak kami.</p>
+      <button onclick="closePopup()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Tutup</button>
+    </div>
+  </div>
+
+  <script>
+    // Supabase init
+    const supabaseUrl = "https://kgwiguriiwhlxpslzkop.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtnd2lndXJpaXdobHhwc2x6a29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MjQ2OTEsImV4cCI6MjA3MjQwMDY5MX0.KIqt7ZEUwlBkqrpAVSDdxqvEG9bjmtMLOUqh7XF157M";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // SLIDER LOAD
+    const slider = document.getElementById('slider');
+    const dots = document.getElementById('slider-dots');
+    let images = [];
+    let current = 0;
+
+    async function loadSlider() {
+      const { data } = await supabase.from('slider_images').select('*');
+      images = data || [];
+      slider.innerHTML = images.map(img => 
+        `<img src="${img.url}" class="w-full h-full object-cover flex-shrink-0">`
+      ).join('');
+      dots.innerHTML = images.map((_, i) => 
+        `<button onclick="goToSlide(${i})" class="w-3 h-3 rounded-full ${i===0?'bg-white':'bg-gray-400'}"></button>`
+      ).join('');
+    }
+
+    function goToSlide(i) {
+      current = i;
+      slider.style.transform = `translateX(-${i*100}%)`;
+      [...dots.children].forEach((d, idx) => d.className = `w-3 h-3 rounded-full ${idx===i?'bg-white':'bg-gray-400'}`);
+    }
+
+    setInterval(() => {
+      if(images.length > 0){
+        current = (current+1) % images.length;
+        goToSlide(current);
+      }
+    }, 4000);
+
+    loadSlider();
+
+    // FORM KONSELING
+    async function sendKonseling(gender){
+      const nama = document.getElementById('nama').value;
+      const kelas = document.getElementById('kelas').value;
+      if(!nama || !kelas) return alert("Harap isi semua data!");
+
+      let nomor = gender === "laki" ? "628123456789" : "628987654321";
+      const pesan = `Halo, saya ${nama} dari kelas ${kelas} ingin melakukan konseling.`;
+
+      // simpan ke DB
+      await supabase.from("konsultasi").insert([{ nama, kelas, gender }]);
+
+      // buka WhatsApp
+      window.open(`https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`, "_blank");
+
+      // tampilkan popup
+      document.getElementById("popup").classList.remove("hidden");
+    }
+
+    function closePopup(){
+      document.getElementById("popup").classList.add("hidden");
+    }
+
+    // Icon load
+    lucide.createIcons();
+  </script>
+</body>
+</html>
